@@ -1,0 +1,253 @@
+/* ======================================================================
+   Weather Detector dashboard
+   - No external fonts or CDNs: works on a hotspot with no internet.
+   - Colours are CSS variables; dark mode follows the device setting.
+   ====================================================================== */
+
+:root {
+  --bg:          #eef3f6;
+  --surface:     #ffffff;
+  --surface-2:   #e4ecf1;
+  --ink:         #14232e;
+  --ink-muted:   #4f6472;
+  --line:        #cfdbe3;
+  --accent:      #1c6e8c;   /* chart line, focus ring */
+  --ok:          #1f7a55;
+  --ok-bg:       #e1f3ea;
+  --hot:         #b3261e;
+  --hot-bg:      #fbe7e5;
+  --cold:        #1a5fb4;
+  --cold-bg:     #e2ecfa;
+  --wait:        #5b6b76;
+  --wait-bg:     #e8edf0;
+  --warn:        #8a5300;
+  --warn-bg:     #fff1d6;
+  --radius:      10px;
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:          #0f1a22;
+    --surface:     #17262f;
+    --surface-2:   #20333f;
+    --ink:         #e7eff4;
+    --ink-muted:   #9db3c0;
+    --line:        #2c4352;
+    --accent:      #5cc0e3;
+    --ok:          #6fd3a4;
+    --ok-bg:       #163627;
+    --hot:         #ff9a92;
+    --hot-bg:      #43201d;
+    --cold:        #8dbcff;
+    --cold-bg:     #1b2f4a;
+    --wait:        #aebdc6;
+    --wait-bg:     #243540;
+    --warn:        #ffcf7a;
+    --warn-bg:     #3d2f12;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1, h2 { margin: 0; line-height: 1.2; }
+h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; font-weight: 650; }
+p  { margin: 0; }
+code {
+  font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--surface-2);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- Top bar --------------------------------------------------------- */
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 0.75rem;
+}
+.title p { color: var(--ink-muted); font-size: 0.95rem; margin-top: 0.15rem; }
+
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: var(--wait-bg);
+  color: var(--wait);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.conn .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: currentColor; }
+.conn[data-state="ok"]      { background: var(--ok-bg);   color: var(--ok); }
+.conn[data-state="stale"]   { background: var(--warn-bg); color: var(--warn); }
+.conn[data-state="error"]   { background: var(--hot-bg);  color: var(--hot); }
+
+/* ---- Layout ---------------------------------------------------------- */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem 2.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem 1.1rem;
+}
+.panel > h2 { margin-bottom: 0.75rem; }
+.fine  { color: var(--ink-muted); font-size: 0.85rem; margin-top: 0.75rem; max-width: 72ch; }
+.muted { color: var(--ink-muted); }
+
+/* ---- Banners --------------------------------------------------------- */
+.banner {
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  border: 1px solid transparent;
+}
+.banner[hidden] { display: none; }
+.banner h2 { margin-bottom: 0.35rem; }
+.banner p + p, .banner ul { margin-top: 0.4rem; }
+.banner ul { padding-left: 1.2rem; margin-bottom: 0; }
+.banner li { margin: 0.15rem 0; }
+.banner-error { background: var(--hot-bg);  color: var(--hot);  border-color: var(--hot); }
+.banner-warn  { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.banner code  { background: rgba(127,127,127,0.18); color: inherit; }
+.banner .muted { color: inherit; opacity: 0.85; }
+
+/* ---- Latest values --------------------------------------------------- */
+.latest {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.6rem;
+}
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.tile-label { color: var(--ink-muted); font-size: 0.85rem; }
+.tile-value { font-size: 0.95rem; color: var(--ink-muted); white-space: nowrap; }
+.tile-value b { font-size: 1.5rem; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---- Temperature status ---------------------------------------------- */
+.status {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+  gap: 0.75rem 1.5rem;
+  border-left-width: 6px;
+}
+.status-main h2 { color: var(--ink-muted); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+.status-word { font-size: 2rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1.1; }
+.status-note { color: var(--ink-muted); margin-top: 0.35rem; font-size: 0.95rem; }
+.status .fine { grid-column: 1 / -1; margin-top: 0; }
+
+.status-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-self: center;
+}
+.status-grid div { background: var(--surface-2); border-radius: 8px; padding: 0.5rem 0.7rem; }
+.status-grid dt  { color: var(--ink-muted); font-size: 0.8rem; }
+.status-grid dd  { margin: 0; font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.status[data-kind="normal"] { border-left-color: var(--ok); }
+.status[data-kind="normal"] .status-word { color: var(--ok); }
+.status[data-kind="above"]  { border-left-color: var(--hot); }
+.status[data-kind="above"]  .status-word { color: var(--hot); }
+.status[data-kind="below"]  { border-left-color: var(--cold); }
+.status[data-kind="below"]  .status-word { color: var(--cold); }
+.status[data-kind="wait"]   { border-left-color: var(--wait); }
+.status[data-kind="wait"]   .status-word { color: var(--wait); }
+
+/* ---- Chart ----------------------------------------------------------- */
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; }
+.controls label { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--ink-muted); font-size: 0.9rem; }
+
+select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  min-height: 2.5rem;
+}
+
+.chart-wrap { position: relative; }
+#chart {
+  display: block;
+  width: 100%;
+  height: 320px;
+  touch-action: pan-y;   /* vertical page scroll still works while touching the chart */
+}
+
+/* ---- Table ----------------------------------------------------------- */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 0.5rem 0.7rem; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { color: var(--ink-muted); font-weight: 600; font-size: 0.85rem; }
+th.num, td.num { text-align: right; }
+tbody tr:first-child td { font-weight: 650; }
+tbody tr:last-child td { border-bottom: 0; }
+
+/* ---- Responsive ------------------------------------------------------ */
+@media (max-width: 900px) {
+  .latest { grid-template-columns: repeat(3, 1fr); }
+  .status { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  h1 { font-size: 1.3rem; }
+  .latest { grid-template-columns: repeat(2, 1fr); }
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .status-word { font-size: 1.6rem; }
+  #chart { height: 250px; }
+  .controls, .controls label, .controls select { width: 100%; }
+  .controls label { justify-content: space-between; }
+  .controls select { width: 60%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

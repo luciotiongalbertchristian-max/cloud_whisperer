@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Weather Detector</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" type="image/png" href="C:\Users\lucio\Downloads\mylogo.jpg">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title">
+    <h1>CLOUD WHISPERER</h1>
+    <p>Live readings from the Arduino UNO R4 WiFi, in Philippine time</p>
+  </div>
+  <div class="conn" id="conn" data-state="connecting" role="status" aria-live="polite">
+    <span class="dot" aria-hidden="true"></span>
+    <span id="connText">Connecting…</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- Shown when history.php cannot be loaded -->
+  <section class="banner banner-error" id="errorBox" hidden role="alert">
+    <h2>Can't load the readings</h2>
+    <p id="errMsg"></p>
+    <p>URL requested: <code id="errUrl"></code></p>
+    <p>Common causes:</p>
+    <ul>
+      <li>Apache or MySQL is not running in the XAMPP Control Panel.</li>
+      <li>The database or table has not been created. Import <code>schema.sql</code>.</li>
+      <li>The database user or password in <code>config.php</code> doesn't match MySQL.</li>
+      <li>This page was opened from a file or another address instead of <code>http://&lt;PC_IP&gt;/weather_detector/</code>.</li>
+      <li>The PC's IP address changed, or Windows Firewall is blocking port 80.</li>
+      <li>This device is not on the same hotspot as the PC.</li>
+    </ul>
+    <p class="muted">The page keeps retrying every second and will recover on its own.</p>
+  </section>
+
+  <!-- Shown when the connection works but the Arduino stopped sending -->
+  <section class="banner banner-warn" id="staleBox" hidden role="status">
+    <h2>No new readings</h2>
+    <p id="staleMsg"></p>
+  </section>
+
+  <section class="latest" aria-label="Latest readings">
+    <div class="tile"><span class="tile-label">Temperature</span><span class="tile-value"><b id="vTemp">—</b> °C</span></div>
+    <div class="tile"><span class="tile-label">Humidity</span><span class="tile-value"><b id="vHum">—</b> %</span></div>
+    <div class="tile"><span class="tile-label">Pressure</span><span class="tile-value"><b id="vPres">—</b> hPa</span></div>
+    <div class="tile"><span class="tile-label">Altitude</span><span class="tile-value"><b id="vAlt">—</b> m</span></div>
+    <div class="tile"><span class="tile-label">Rain (raw)</span><span class="tile-value"><b id="vRain">—</b></span></div>
+    <div class="tile"><span class="tile-label">Gas (raw)</span><span class="tile-value"><b id="vGas">—</b></span></div>
+  </section>
+
+  <section class="panel status" id="statusPanel" data-kind="wait" aria-labelledby="statusHeading">
+    <div class="status-main">
+      <h2 id="statusHeading">Temperature status</h2>
+      <p class="status-word" id="statusWord">COLLECTING DATA</p>
+      <p class="status-note" id="statusNote">Waiting for readings…</p>
+    </div>
+    <dl class="status-grid">
+      <div><dt>Current</dt><dd><span id="stCurrent">—</span> °C</dd></div>
+      <div><dt>Recent average</dt><dd><span id="stAvg">—</span> °C</dd></div>
+      <div><dt>Difference</dt><dd><span id="stDiff">—</span> °C</dd></div>
+      <div><dt>Readings used</dt><dd><span id="stCount">0</span></dd></div>
+    </dl>
+    <p class="fine">
+      The latest saved temperature is compared with the average of up to the 60 readings before it
+      (at least 12 are needed). More than 2 °C above the average is ABOVE NORMAL, more than 2 °C
+      below is BELOW NORMAL. With one reading per second, 60 readings cover about 1 minute.
+    </p>
+  </section>
+
+  <section class="panel" aria-labelledby="chartHeading">
+    <div class="panel-head">
+      <h2 id="chartHeading">History chart</h2>
+      <div class="controls">
+        <label>Show
+          <select id="metricSelect">
+            <option value="temperatureC">Temperature (°C)</option>
+            <option value="humidityPct">Humidity (%)</option>
+            <option value="pressureHpa">Pressure (hPa)</option>
+            <option value="altitudeM">Altitude (m)</option>
+            <option value="rainRaw">Rain (raw)</option>
+            <option value="gasRaw">Gas (raw)</option>
+          </select>
+        </label>
+        <label>Window
+          <select id="windowSelect">
+            <option value="60">Last 60 readings</option>
+            <option value="120" selected>Last 120 readings</option>
+            <option value="300">Last 300 readings</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="chart" role="img" aria-label="Line chart of the selected sensor over time"></canvas>
+    </div>
+    <p class="fine" id="chartCaption">Touch or hover the chart to read a value.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="tableHeading">
+    <h2 id="tableHeading">Last 10 records</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Recorded (Philippines)</th>
+            <th scope="col" class="num">Temp °C</th>
+            <th scope="col" class="num">Humidity %</th>
+            <th scope="col" class="num">Pressure hPa</th>
+            <th scope="col" class="num">Altitude m</th>
+            <th scope="col" class="num">Rain raw</th>
+            <th scope="col" class="num">Gas raw</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="7" class="muted">No readings yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

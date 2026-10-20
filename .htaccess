@@ -1,0 +1,17 @@
+# Weather Detector - Apache per-directory rules (Apache 2.4 / XAMPP)
+
+# config.php and lib.php are only ever include()d by other PHP files.
+# Block them from direct browser access.
+<FilesMatch "^(config|lib)\.php$">
+    Require all denied
+</FilesMatch>
+
+# No directory listings.
+Options -Indexes
+
+# The dashboard must always show fresh data.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|js|css)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
